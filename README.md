@@ -60,19 +60,15 @@ skills/review-diff/
 | `debug-error` | 에러·버그 원인 추적 및 근본 수정 |
 
 ### `core/mcp/`
-Claude Code와 Codex에서 사용할 외부 도구(MCP 서버) 연결 정보를 관리한다.
+Claude Code와 Codex에서 사용할 외부 도구(MCP 서버) 연결 정보를 관리한다. 현재는 Notion MCP만 사용한다.
 
 ```
 mcp/
-├── servers.yaml        서버 카탈로그(명령·인자·환경변수 이름·활성화·프로필)
-└── profiles/           작업 맥락별 프로필
-    ├── default.yaml
-    └── frontend.yaml
+└── servers.yaml        서버 카탈로그(명령·인자·환경변수 이름·활성화)
 ```
 
-- `servers.yaml`에는 서버 이름·실행 명령·인자·환경변수 이름·활성화 여부·적용 프로필을 둔다.
-- **실제 API 키·토큰 값은 저장하지 않는다.** 환경변수 참조(`${GITHUB_TOKEN}`)만 둔다.
-- 특정 프로필의 활성 서버 = `enabled: true` 이면서 `profiles`에 해당 프로필 이름을 포함한 서버.
+- `servers.yaml`에는 서버 이름·실행 명령·인자·환경변수 이름·활성화 여부를 둔다.
+- **실제 API 키·토큰 값은 저장하지 않는다.** 환경변수 참조(`${NOTION_TOKEN}`)만 둔다.
 
 ### `core/hooks/`
 AI의 특정 행동 전후에 실행되는 자동 검사·안전장치 스크립트를 관리한다. instructions가 규칙을 "설명"한다면, hooks는 실행 단계에서 규칙을 "검사·차단"하는 더 강한 제어 수단이다.
