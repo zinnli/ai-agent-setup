@@ -58,6 +58,7 @@ skills/review-diff/
 | `implement-verify` | 계획대로 구현하고 검증까지 마무리 |
 | `review-diff` | 변경 diff 리뷰 및 개선점 정리 |
 | `debug-error` | 에러·버그 원인 추적 및 근본 수정 |
+| `context7-docs` | `ctx7` CLI로 라이브러리 최신 문서 조회 |
 
 ### `core/mcp/`
 Claude Code와 Codex에서 사용할 외부 도구(MCP 서버) 연결 정보를 관리한다. 현재는 Notion MCP만 사용한다.

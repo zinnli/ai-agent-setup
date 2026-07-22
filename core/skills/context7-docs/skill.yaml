@@ -1,0 +1,19 @@
+name: context7-docs
+description: ctx7 CLI로 라이브러리의 최신 공식 문서를 가져와 참고한다.
+when_to_use:
+  - React·Next.js·TanStack Query 등 라이브러리의 최신 API·사용법이 필요할 때
+  - 학습 데이터가 오래되어 API 시그니처가 바뀌었을 가능성이 있을 때
+  - 코드 작성 전 정확한 사용법·옵션을 확인하고 싶을 때
+not_for:
+  - 프로젝트 내부 코드 확인(explorer/코드 검색 사용)
+  - 문서가 없는 사내 라이브러리
+requires:
+  - ctx7 CLI (npm i -g ctx7@latest 또는 npx ctx7@latest)
+  - CONTEXT7_API_KEY(선택, 없으면 rate limit 적용)
+inputs:
+  - 라이브러리 이름과 알고 싶은 주제(질의)
+outputs:
+  - 해당 라이브러리의 최신 문서 발췌와 근거 링크
+related:
+  - feature-plan
+  - implement-verify
