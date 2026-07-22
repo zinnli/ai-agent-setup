@@ -1,0 +1,14 @@
+# frontend 프로필
+#
+# 프론트엔드 작업에 쓰는 서버 집합.
+# 실제 활성화 대상 = servers.yaml에서 enabled == true 이고
+#                    profiles 에 이 프로필 이름(frontend)을 포함한 서버.
+#   - playwright : 브라우저 자동화·E2E 확인
+#   - context7   : 최신 라이브러리 문서 참조
+#   - github     : 리포지토리 연동 (GITHUB_TOKEN 필요, 기본 비활성)
+
+name: frontend
+description: 프론트엔드 개발 작업에 적용하는 프로필.
+
+# 프로필 범위의 환경변수(선택). 값이 아니라 참조만 둔다.
+env: {}

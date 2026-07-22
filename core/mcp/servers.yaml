@@ -1,0 +1,53 @@
+# MCP 서버 카탈로그 (중립 소스)
+#
+# Claude Code(.mcp.json)와 Codex(config.toml)로 변환되는 원본이다.
+# 실제 API 키·토큰 값은 저장하지 않는다. 환경변수 이름만 ${VAR} 형식으로 참조한다.
+#
+# 각 서버 필드:
+#   enabled   : 사용 여부(전역 토글)
+#   transport : 연결 방식 (stdio | sse | http)
+#   command   : 실행 명령
+#   args      : 실행 인자
+#   env       : 환경변수 이름 매핑 (값이 아니라 참조)
+#   profiles  : 이 서버가 포함되는 프로필 목록 (profiles/ 참고)
+
+servers:
+  filesystem:
+    enabled: true
+    transport: stdio
+    command: npx
+    args:
+      - "-y"
+      - "@modelcontextprotocol/server-filesystem"
+    profiles:
+      - default
+      - frontend
+
+  playwright:
+    enabled: true
+    transport: stdio
+    command: npx
+    args:
+      - "@playwright/mcp@latest"
+    profiles:
+      - frontend
+
+  context7:
+    enabled: true
+    transport: stdio
+    command: npx
+    args:
+      - "-y"
+      - "@upstash/context7-mcp"
+    profiles:
+      - frontend
+
+  github:
+    enabled: false
+    transport: stdio
+    command: github-mcp-server
+    env:
+      GITHUB_TOKEN: ${GITHUB_TOKEN}
+    profiles:
+      - default
+      - frontend

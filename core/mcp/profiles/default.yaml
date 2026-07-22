@@ -1,0 +1,11 @@
+# default 프로필
+#
+# 어떤 작업에서나 쓰는 기본 서버 집합.
+# 실제 활성화 대상 = servers.yaml에서 enabled == true 이고
+#                    profiles 에 이 프로필 이름(default)을 포함한 서버.
+
+name: default
+description: 모든 작업에 공통으로 적용하는 기본 프로필.
+
+# 프로필 범위의 환경변수(선택). 값이 아니라 참조만 둔다.
+env: {}
