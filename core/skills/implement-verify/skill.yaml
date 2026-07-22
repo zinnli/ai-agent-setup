@@ -1,0 +1,16 @@
+name: implement-verify
+description: 계획에 따라 구현하고, 변경이 실제로 동작하는지 검증까지 마친다.
+when_to_use:
+  - 기능·수정 사항을 실제로 코드에 반영할 때
+  - 구현 후 빌드·타입·테스트로 동작을 확인해야 할 때
+not_for:
+  - 계획 수립 단계(먼저 feature-plan 사용)
+  - 코드 변경 없는 문서·설정 조회
+inputs:
+  - 구현 계획 또는 구체적인 작업 지시
+outputs:
+  - 변경된 코드, 실행한 검증 명령과 결과 보고
+related:
+  - feature-plan
+  - review-diff
+  - debug-error

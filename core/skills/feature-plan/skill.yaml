@@ -1,0 +1,16 @@
+name: feature-plan
+description: 기능을 구현하기 전에 요구사항을 정리하고 구현 계획을 세운다.
+when_to_use:
+  - 새 기능이나 화면을 추가하기 전
+  - 요구사항이 모호하거나 범위가 큰 작업을 시작하기 전
+  - 여러 파일·모듈에 걸친 변경이 예상될 때
+not_for:
+  - 한 줄 수정, 오타 수정 등 사소한 변경
+  - 이미 계획이 확정된 단순 작업
+inputs:
+  - 구현하려는 기능 설명 또는 이슈
+outputs:
+  - 요구사항 정리, 영향 범위, 단계별 구현 계획
+related:
+  - implement-verify
+  - review-diff

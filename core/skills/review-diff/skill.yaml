@@ -1,0 +1,15 @@
+name: review-diff
+description: 변경된 diff를 리뷰해 버그·설계·컨벤션 문제를 찾고 개선점을 정리한다.
+when_to_use:
+  - 커밋·PR 전에 변경 사항을 점검할 때
+  - 작성한 코드의 품질과 리스크를 확인하고 싶을 때
+not_for:
+  - 아직 변경 사항이 없을 때
+  - 전체 아키텍처 설계 논의(리뷰가 아닌 계획 단계)
+inputs:
+  - 리뷰 대상 diff(작업 브랜치 또는 스테이징된 변경)
+outputs:
+  - 심각도별로 정리된 리뷰 코멘트와 개선 제안
+related:
+  - implement-verify
+  - feature-plan

@@ -1,0 +1,15 @@
+name: debug-error
+description: 에러·버그의 원인을 재현하고 좁혀서 근본 원인을 고친다.
+when_to_use:
+  - 빌드·타입·테스트·런타임 에러가 발생했을 때
+  - 기대와 다른 동작(버그)의 원인을 찾아야 할 때
+not_for:
+  - 원인이 이미 명확한 단순 수정
+  - 새 기능 계획(feature-plan 사용)
+inputs:
+  - 에러 메시지·스택 트레이스 또는 재현 방법
+outputs:
+  - 근본 원인 설명과 수정, 재발 방지 방안
+related:
+  - implement-verify
+  - review-diff
