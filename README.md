@@ -86,15 +86,88 @@ AI의 특정 행동 전후에 실행되는 자동 검사·안전장치 스크립
 - Claude Code와 Codex의 훅 지원 방식이 다르므로, `core/hooks/`에는 공통 스크립트만 두고 연결은 `adapters/`가 처리한다.
 
 ## 변환(adapters)
-`core/`는 도구 비종속 중립 소스다. 추후 `adapters/`의 렌더러가 각 도구 형식으로 변환한다.
+`core/`는 도구 비종속 중립 소스다. `src/adapters/`의 렌더러가 각 도구 형식으로 변환한다.
 
 | 원본 | Claude Code | Codex |
 | --- | --- | --- |
-| `instructions/` | `CLAUDE.md` / 메모리 | `AGENTS.md` |
-| `agents/` | `agents/*.md` | `agents/*.toml` |
-| `skills/` | `SKILL.md` | 스킬 형식(정리 예정) |
-| `mcp/` | `.mcp.json` 또는 Claude 설정 | `config.toml` |
-| `hooks/` | `settings.json`의 hooks 연결 | 도구별 훅 연결 |
+| `instructions/` | `~/.claude/CLAUDE.md` | `~/.codex/AGENTS.md` |
+| `agents/` | `~/.claude/agents/*.md` (frontmatter) | `~/.codex/agents/*.toml` |
+| `skills/` | `~/.claude/skills/<name>/SKILL.md` | `~/.agents/skills/<name>/SKILL.md` |
+| `mcp/` | `~/.claude.json` `mcpServers` (구조 병합) | `~/.codex/config.toml` `[mcp_servers]` (구조 병합) |
+| `hooks/` | `~/.claude/hooks/*` + `settings.json` (구조 병합) | `~/.codex/hooks/*` + `hooks.json` (구조 병합) |
 
-## 사용
-로컬 Claude·Codex 설정에서 `core/` 하위 파일을 참조하도록 연결해 사용한다. (연결 방식은 도구별 설정에 따라 정리 예정)
+`read-only` 모드는 각 도구에서 강제되는 네이티브 권한이 아니라 **명시적 행동 규칙**("파일을 수정하지 않는다" 등)으로 렌더링된다.
+
+## 설치와 실행
+
+TypeScript로 작성되어 있으며 `tsc`로 빌드한다.
+
+```bash
+npm install
+npm run build          # src/ → dist/
+node dist/src/cli.js <command> [options]
+```
+
+### 명령어
+
+| 명령 | 설명 |
+| --- | --- |
+| `build` | `core/`를 렌더링해 `generated/<tool>/`에 미리보기를 만든다. HOME을 건드리지 않는다. |
+| `install` | 렌더 결과를 실제 설정 위치에 설치한다(백업·구조 병합). |
+| `update` | 다시 렌더링해 기존 설치와 조정한다(사용자 수정 파일은 보존). |
+| `diff` | 설치/업데이트가 무엇을 바꿀지 미리 본다(쓰기 없음). |
+| `uninstall` | 관리 파일 제거·백업 복원, 병합 항목만 정리한다. |
+| `doctor` | 환경·`core/`·생성물·설치 상태를 점검한다(읽기 전용). |
+| `init` | 감지한 프로젝트 정보로 프로젝트용 `CLAUDE.md`·`AGENTS.md`를 만든다. |
+
+### 공통 옵션
+
+| 옵션 | 설명 |
+| --- | --- |
+| `--target=claude\|codex\|all` | 대상 도구 (기본 `all`) |
+| `--home=<dir>` | 실제 HOME 대신 이 디렉터리에 작업 (테스트·미리보기용) |
+| `--dry-run` | 아무것도 쓰지 않고 계획만 표시 |
+| `--force` | 검증 오류·충돌·사용자 수정 파일을 무릅쓰고 진행 |
+| `--verbose` | 상세 로그 |
+| `--dir=<dir>` | `init` 대상 프로젝트 디렉터리 |
+
+### 예시
+
+```bash
+node dist/src/cli.js build --target=all
+node dist/src/cli.js install                       # 실제 ~/.claude, ~/.codex, ~/.agents 에 설치
+node dist/src/cli.js diff --target=claude
+node dist/src/cli.js uninstall
+node dist/src/cli.js doctor
+node dist/src/cli.js init                           # 현재 프로젝트에 CLAUDE.md/AGENTS.md 생성
+```
+
+## 안전장치와 병합 정책
+
+- **전용 생성 파일**(CLAUDE.md, AGENTS.md, agents/\*, skills/\*\*)은 전체 소유(full-file)로 관리하며, 기존 파일이 있으면 먼저 백업한다.
+- **공유 설정 파일**(settings.json, ~/.claude.json, config.toml, hooks.json)은 **구조 병합**한다. ai-agent-setup이 소유한 키·항목만 넣고, 사용자 설정은 보존한다.
+- 재설치는 멱등하다(중복 훅·MCP 서버가 생기지 않음).
+- 사용자가 수정한 관리 파일은 감지해 보존하고, `--force`로만 덮어쓴다(덮어쓰기 전 백업).
+- `uninstall`은 백업을 복원하고 병합 항목 중 우리 것만 제거하며, 사용자 항목은 남긴다.
+- 설치 상태는 도구별 매니페스트(`<installRoot>/.ai-agent-setup/manifest.json`)로 추적한다.
+
+## 민감 정보
+
+- API 키·토큰은 저장소·생성물·매니페스트에 저장하지 않는다.
+- MCP 설정은 환경변수 참조(`${NOTION_TOKEN}`)만 두며, 값은 런타임 환경변수로 주입한다.
+- `doctor`는 활성 MCP 서버가 참조하는 환경변수가 비어 있으면 경고한다.
+
+## Claude와 Codex 차이
+
+두 도구가 동일하다고 가정하지 않는다. 각 어댑터의 이벤트·매처·필드 매핑은 독립적으로 검증한다. 특정 필드·매핑이 공식적으로 확인되지 않으면 억지로 맞추지 않고 `generated/<tool>/COMPATIBILITY.md`에 개별 항목으로 기록하며, `doctor`가 경고로 노출한다(카테고리 전체를 미지원으로 처리하지 않음).
+
+## 개발
+
+```bash
+npm test               # 빌드 후 unit·snapshot·integration 테스트 (temp HOME 사용)
+UPDATE_SNAPSHOTS=1 npm test   # 스냅샷 갱신
+```
+
+자동 테스트는 실제 HOME을 절대 수정하지 않는다(항상 임시 HOME). 실제 Claude/Codex 로딩 확인은 수동 체크리스트로 남긴다 — `docs/manual-checklist.md` 참고.
+
+문서: [`docs/architecture.md`](docs/architecture.md), [`docs/core-schema.md`](docs/core-schema.md) (Core 추가 방법), [`docs/adapters.md`](docs/adapters.md), [`docs/installation.md`](docs/installation.md), [`docs/troubleshooting.md`](docs/troubleshooting.md), [`docs/manual-checklist.md`](docs/manual-checklist.md).

@@ -4,6 +4,8 @@ import { runBuild } from './commands/build.js';
 import { runInstall } from './commands/install.js';
 import { runUninstall } from './commands/uninstall.js';
 import { runDiff } from './commands/diff.js';
+import { runDoctor } from './commands/doctor.js';
+import { runInit } from './commands/init.js';
 import { createLogger } from './util/log.js';
 
 const HELP = `ai-agent-setup — render tool-neutral core/ config for Claude Code and Codex
@@ -17,8 +19,8 @@ Commands:
   update       Re-render and reconcile an existing install
   diff         Show what an install/update would change (no writes)
   uninstall    Remove managed files, restore backups, strip merged entries
-  doctor       (coming soon) Health-check core/ and any install
-  init         (coming soon) Scaffold project-local config
+  doctor       Health-check the environment, core/, generated output, install
+  init         Scaffold project-local CLAUDE.md + AGENTS.md from detected facts
 
 Options:
   --target <claude|codex|all>   Which tool(s) to act on (default: all)
@@ -46,6 +48,7 @@ function main(argv: string[]): number {
       force: { type: 'boolean', default: false },
       verbose: { type: 'boolean', default: false },
       home: { type: 'string' },
+      dir: { type: 'string' },
       help: { type: 'boolean', short: 'h', default: false },
     },
     allowPositionals: false,
@@ -82,9 +85,15 @@ function main(argv: string[]): number {
       runUninstall(common);
       return 0;
     case 'doctor':
+      return runDoctor(common).hasError ? 1 : 0;
     case 'init':
-      log.error(`"${command}" is not implemented yet.`);
-      return 2;
+      runInit({
+        force: values.force,
+        verbose: values.verbose,
+        ...(values.dir ? { dir: values.dir } : {}),
+        logger: log,
+      });
+      return 0;
     default:
       log.error(`Unknown command "${command}".`);
       console.log(HELP);
