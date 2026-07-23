@@ -1,6 +1,9 @@
 #!/usr/bin/env node
 import { parseArgs } from 'node:util';
 import { runBuild } from './commands/build.js';
+import { runInstall } from './commands/install.js';
+import { runUninstall } from './commands/uninstall.js';
+import { runDiff } from './commands/diff.js';
 import { createLogger } from './util/log.js';
 
 const HELP = `ai-agent-setup — render tool-neutral core/ config for Claude Code and Codex
@@ -10,11 +13,11 @@ Usage:
 
 Commands:
   build        Render core/ into generated/<tool>/ (no HOME is touched)
-  install      (coming soon) Install generated config into a HOME
-  update       (coming soon) Re-render and update an existing install
-  diff         (coming soon) Show differences vs the installed config
+  install      Install rendered config into a HOME (backs up + merges safely)
+  update       Re-render and reconcile an existing install
+  diff         Show what an install/update would change (no writes)
+  uninstall    Remove managed files, restore backups, strip merged entries
   doctor       (coming soon) Health-check core/ and any install
-  uninstall    (coming soon) Remove managed files and restore backups
   init         (coming soon) Scaffold project-local config
 
 Options:
@@ -55,21 +58,30 @@ function main(argv: string[]): number {
 
   const log = createLogger({ verbose: values.verbose });
 
+  const common = {
+    target: values.target ?? 'all',
+    dryRun: values['dry-run'],
+    force: values.force,
+    verbose: values.verbose,
+    ...(values.home ? { home: values.home } : {}),
+    logger: log,
+  };
+
   switch (command) {
     case 'build':
-      runBuild({
-        target: values.target ?? 'all',
-        dryRun: values['dry-run'],
-        force: values.force,
-        verbose: values.verbose,
-        logger: log,
-      });
+      runBuild(common);
       return 0;
     case 'install':
     case 'update':
+      runInstall(common);
+      return 0;
     case 'diff':
-    case 'doctor':
+      runDiff(common);
+      return 0;
     case 'uninstall':
+      runUninstall(common);
+      return 0;
+    case 'doctor':
     case 'init':
       log.error(`"${command}" is not implemented yet.`);
       return 2;

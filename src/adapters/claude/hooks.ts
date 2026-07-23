@@ -64,6 +64,7 @@ export function renderHooks(core: CoreModel): GeneratedFile[] {
     managed: false,
     mergeTarget: '~/.claude/settings.json',
     managedPaths: Object.keys(events).map((event) => `hooks.${event}`),
+    mergeStrategy: 'append-array',
   });
 
   return files;

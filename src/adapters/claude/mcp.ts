@@ -37,6 +37,7 @@ export function renderMcp(core: CoreModel): GeneratedFile[] {
       managed: false,
       mergeTarget: '~/.claude.json',
       managedPaths,
+      mergeStrategy: 'replace-keys',
     },
   ];
 }

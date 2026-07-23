@@ -28,6 +28,14 @@ export interface GeneratedFile {
    * ["mcpServers.notion"]. Phase 3 merges/removes exactly these paths.
    */
   managedPaths?: string[];
+  /**
+   * For merge targets, how the fragment combines with existing content:
+   * - replace-keys: set each managed path to our value (conflict if a foreign
+   *   value already occupies it)
+   * - append-array: union our items into the array at each managed path,
+   *   identified so reinstall is idempotent and user items are preserved
+   */
+  mergeStrategy?: 'replace-keys' | 'append-array';
 }
 
 /** A core feature/field that has no faithful representation in a given tool. */

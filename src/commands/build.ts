@@ -1,10 +1,8 @@
 import { mkdirSync, writeFileSync, rmSync, chmodSync } from 'node:fs';
 import path from 'node:path';
 import type { CoreModel } from '../core/model.js';
-import { loadCore } from '../core/load.js';
-import { selectAdapters } from '../adapters/registry.js';
-import type { Adapter, RenderResult } from '../adapters/types.js';
 import { resolveFilePath } from '../fs/layout.js';
+import { renderAll, type AdapterBuild } from '../adapters/render-all.js';
 import { renderCompatibility } from '../adapters/shared/unsupported.js';
 import { coreDir as defaultCoreDir, generatedDir as defaultGeneratedDir } from '../util/paths.js';
 import { createLogger, reportDiagnostics, type Logger } from '../util/log.js';
@@ -17,11 +15,6 @@ export interface BuildOptions {
   coreDir?: string;
   generatedDir?: string;
   logger?: Logger;
-}
-
-export interface AdapterBuild {
-  adapter: Adapter;
-  result: RenderResult;
 }
 
 export interface BuildOutput {
@@ -38,16 +31,11 @@ export function runBuild(opts: BuildOptions): BuildOutput {
   const coreDir = opts.coreDir ?? defaultCoreDir();
   const genDir = opts.generatedDir ?? defaultGeneratedDir();
 
-  const { core, diagnostics } = loadCore(coreDir);
+  const { core, diagnostics, builds } = renderAll(opts.target, coreDir);
   const hasError = reportDiagnostics(diagnostics, log);
   if (hasError && !opts.force) {
     throw new Error('core validation failed. Fix the errors above or pass --force.');
   }
-
-  const builds: AdapterBuild[] = selectAdapters(opts.target).map((adapter) => ({
-    adapter,
-    result: adapter.render(core),
-  }));
 
   for (const { adapter, result } of builds) {
     const toolHome = path.join(genDir, adapter.id);
