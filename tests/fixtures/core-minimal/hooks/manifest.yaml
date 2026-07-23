@@ -1,0 +1,5 @@
+hooks:
+  guard:
+    trigger: before-command
+    blocking: true
+    targets: [command]

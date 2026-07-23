@@ -1,0 +1,7 @@
+name: demo-agent
+description: 데모용 에이전트.
+mode: read-only
+skills:
+  - demo
+instructions:
+  - 아무것도 수정하지 않는다.

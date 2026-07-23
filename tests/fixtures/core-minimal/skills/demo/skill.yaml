@@ -1,0 +1,13 @@
+name: demo
+description: 데모 스킬.
+when_to_use:
+  - 데모가 필요할 때
+not_for:
+  - 실제 작업
+requires:
+  - demo CLI
+inputs:
+  - 데모 입력
+outputs:
+  - 데모 출력
+related: []

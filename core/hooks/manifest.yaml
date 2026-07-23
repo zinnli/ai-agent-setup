@@ -1,0 +1,30 @@
+# 훅 메타데이터 (중립 소스)
+#
+# core/hooks/*.sh 는 도구 비종속 스크립트다. 이 파일은 각 훅이 "언제/무엇에"
+# 대해 동작하는지를 중립적인 표현으로 선언한다. 도구별 이벤트 이름·매처는
+# 어댑터(src/adapters/<tool>/event-map.ts)가 매핑한다.
+#
+# 필드:
+#   trigger  : before-command | before-file-access | after-file-change | before-finish
+#   blocking : true 면 스크립트가 0이 아닌 값으로 종료할 때 동작을 차단한다.
+#   targets  : command | read | edit | write  (해당 훅이 관여하는 동작)
+#   env      : 훅 실행 시 기본 환경변수 (선택)
+hooks:
+  block-destructive-command:
+    trigger: before-command
+    blocking: true
+    targets: [command]
+  protect-secrets:
+    trigger: before-file-access
+    blocking: true
+    targets: [read, edit, write, command]
+  format-changed-files:
+    trigger: after-file-change
+    blocking: false
+    targets: [edit, write]
+  validate-before-finish:
+    trigger: before-finish
+    blocking: true
+    targets: []
+    env:
+      HOOK_RUN_TESTS: "0"
