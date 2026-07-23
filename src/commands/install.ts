@@ -14,7 +14,7 @@ import {
   type MergeEntry,
 } from '../fs/manifest.js';
 import { applyMerge, removeMerge } from '../fs/merge.js';
-import { tryParseJson } from '../util/json.js';
+import { tryParseConfig, stringifyConfig, type ConfigFormat } from '../fs/config-format.js';
 import { sha256 } from '../util/hash.js';
 import { repoRelative, resolveHome } from '../util/paths.js';
 import { createLogger, reportDiagnostics, type Logger } from '../util/log.js';
@@ -152,22 +152,27 @@ export function installAdapter(
     newMergePaths.add(homeRel);
     const prevEntry = prev.merges.find((e) => e.path === homeRel);
     const sourceFiles = file.sourceFiles.map((s) => repoRelative(s));
+    const format: ConfigFormat = file.format ?? 'json';
 
     const existingText = existsSync(abs) ? readFileSync(abs, 'utf8') : null;
     let existing: Json = {};
     if (existingText !== null) {
-      const parsed = tryParseJson(existingText);
+      const parsed = tryParseConfig(existingText, format);
       if (!parsed.ok) {
-        log.error(`skipping merge into ${homeRel}: malformed JSON (${parsed.error})`);
+        log.error(`skipping merge into ${homeRel}: malformed ${format} (${parsed.error})`);
         items.push({ kind: 'merge', path: homeRel, status: 'CONFLICT', detail: 'malformed target' });
         // keep any prior manifest entry so we don't lose tracking
         if (prevEntry) merges.push(prevEntry);
         continue;
       }
-      existing = (parsed.value ?? {}) as Json;
+      existing = parsed.value;
     }
 
-    const applied = applyMerge(existing, file, prevEntry, force);
+    const fragmentParsed = tryParseConfig(file.content, format);
+    if (!fragmentParsed.ok) {
+      throw new Error(`internal: generated ${format} fragment for ${homeRel} is invalid: ${fragmentParsed.error}`);
+    }
+    const applied = applyMerge(existing, fragmentParsed.value, file, prevEntry, force);
     let backup: string | null = prevEntry?.backup ?? null;
     let status: ItemStatus;
 
@@ -182,12 +187,13 @@ export function installAdapter(
 
     if (!dry && applied.changed) {
       if (existingText !== null && !backup) backup = backupFile(home, installRoot, abs, session);
-      atomicWrite(abs, JSON.stringify(applied.merged, null, 2) + '\n', 0o644);
+      atomicWrite(abs, stringifyConfig(applied.merged, format), 0o644);
     }
 
     const entry: MergeEntry = {
       path: homeRel,
       strategy: file.mergeStrategy ?? 'replace-keys',
+      format,
       managedPaths: file.managedPaths ?? [],
       backup,
       sourceFiles,
@@ -246,22 +252,23 @@ export function restoreOrRemoveManaged(home: string, entry: ManagedEntry): void 
 export function removeMergeEntry(home: string, entry: MergeEntry, force: boolean, log: Logger): void {
   const abs = path.join(home, entry.path);
   if (!existsSync(abs)) return;
-  const parsed = tryParseJson(readFileSync(abs, 'utf8'));
+  const format: ConfigFormat = entry.format ?? 'json';
+  const parsed = tryParseConfig(readFileSync(abs, 'utf8'), format);
   if (!parsed.ok) {
-    log.error(`cannot clean ${entry.path}: malformed JSON — left untouched`);
+    log.error(`cannot clean ${entry.path}: malformed ${format} — left untouched`);
     return;
   }
-  const { merged, preserved } = removeMerge((parsed.value ?? {}) as Json, entry, force);
+  const { merged, preserved } = removeMerge(parsed.value, entry, force);
   for (const p of preserved) log.warn(`preserved user-modified ${entry.path}:${p} (use --force to remove)`);
 
   // If nothing remains and we created the file (no pre-existing backup), remove it
-  // entirely rather than leaving an empty {} behind. Otherwise write the residue,
+  // entirely rather than leaving an empty file behind. Otherwise write the residue,
   // which still holds the user's own keys.
   if (Object.keys(merged).length === 0 && !entry.backup) {
     rmSync(abs, { force: true });
     return;
   }
-  atomicWrite(abs, JSON.stringify(merged, null, 2) + '\n', 0o644);
+  atomicWrite(abs, stringifyConfig(merged, format), 0o644);
 }
 
 function summarize(adapter: string, items: PlanItem[], opts: InstallOptions, log: Logger): void {

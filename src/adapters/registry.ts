@@ -1,9 +1,11 @@
 import type { Adapter } from './types.js';
 import { claudeAdapter } from './claude/index.js';
+import { codexAdapter } from './codex/index.js';
 
-/** All implemented adapters, keyed by id. Codex is added in Phase 4. */
+/** All implemented adapters, keyed by id. */
 export const adapters: Record<string, Adapter> = {
   claude: claudeAdapter,
+  codex: codexAdapter,
 };
 
 export type TargetSelector = 'all' | string;

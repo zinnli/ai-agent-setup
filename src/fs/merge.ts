@@ -32,17 +32,19 @@ export function hookEntrySignature(entry: unknown): string | null {
 }
 
 /**
- * Merge a fragment into existing parsed config, preserving all foreign content.
- * `prev` is the manifest entry from a previous install (enables safe updates and
- * conflict detection). Returns the merged object plus what to record in the manifest.
+ * Merge a parsed fragment into existing parsed config, preserving all foreign
+ * content. Both `existing` and `fragment` are plain objects (already parsed from
+ * JSON or TOML by the caller), so this logic is serialization-agnostic. `prev` is
+ * the manifest entry from a previous install (enables safe updates and conflict
+ * detection). Returns the merged object plus what to record in the manifest.
  */
 export function applyMerge(
   existing: Json,
+  fragment: Json,
   file: GeneratedFile,
   prev: MergeEntry | undefined,
   force: boolean,
 ): MergeApply {
-  const fragment = JSON.parse(file.content) as Json;
   const merged: Json = structuredClone(existing);
   const before = stableStringify(existing);
 

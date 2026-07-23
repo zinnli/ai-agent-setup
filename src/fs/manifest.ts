@@ -17,6 +17,8 @@ export interface ManagedEntry {
 export interface MergeEntry {
   path: string;
   strategy: 'replace-keys' | 'append-array';
+  /** serialization of the target file (default "json") */
+  format?: 'json' | 'toml';
   /** object paths we own, e.g. ["mcpServers.notion"] or ["hooks.PreToolUse"] */
   managedPaths: string[];
   /** replace-keys: managed path -> sha256 of the JSON value we installed */

@@ -36,6 +36,8 @@ export interface GeneratedFile {
    *   identified so reinstall is idempotent and user items are preserved
    */
   mergeStrategy?: 'replace-keys' | 'append-array';
+  /** Serialization of a merge target/fragment (default "json"). */
+  format?: 'json' | 'toml';
 }
 
 /** A core feature/field that has no faithful representation in a given tool. */
