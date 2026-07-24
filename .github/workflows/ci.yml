@@ -29,7 +29,9 @@ jobs:
         run: npm run build
 
       - name: Tests (unit + snapshot + integration, temp HOME only)
-        run: node --test "dist/tests/**/*.test.js"
+        # Expand the glob with find so this works on Node 20 too (node --test only
+        # gained glob-path support in Node 22).
+        run: node --test $(find dist/tests -name '*.test.js' | sort)
 
       - name: Deterministic double-build (no diff)
         run: |
