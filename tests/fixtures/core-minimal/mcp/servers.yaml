@@ -1,0 +1,8 @@
+servers:
+  demo:
+    enabled: true
+    transport: stdio
+    command: echo
+    args: ["hello"]
+    env:
+      DEMO_TOKEN: ${DEMO_TOKEN}
