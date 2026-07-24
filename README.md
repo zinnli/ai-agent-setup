@@ -1,11 +1,39 @@
 # ai-agent-setup
 
-개인 용도의 AI 에이전트 공용 설정 저장소다. 로컬에서 **Claude Code**와 **Codex** 양쪽에서 동일하게 사용할 수 있는 지침·에이전트·스킬·MCP·훅을 한곳에서 관리하는 것을 목표로 한다.
+개인 용도의 AI 에이전트 공용 설정 저장소다. 로컬에서 **Claude Code**와 **Codex** 양쪽에서 동일하게 사용할 수 있는 지침·에이전트·스킬·MCP·훅을 **하나의 도구 비종속 소스(`core/`)** 에서 관리하고, 포함된 CLI가 이를 각 도구의 네이티브 설정 형식으로 렌더링·설치한다.
 
 ## 목표
 - 도구(Claude Code, Codex)에 상관없이 일관된 행동 규칙과 작업 방식을 적용한다.
 - 지침·에이전트·스킬·MCP·훅을 재사용 가능한 단위로 분리해 관리한다.
 - 프로젝트마다 반복되는 설정을 공용화한다.
+
+## 동작 방식 한눈에 보기
+
+```
+core/ (중립 소스)  ──▶  src/adapters/ (렌더러)  ──▶  ~/.claude/**  (Claude Code)
+                                             └──▶  ~/.codex/**, ~/.agents/skills/**  (Codex)
+```
+
+`core/`는 특정 도구 규격을 담지 않는다. `install`이 어댑터로 각 도구 형식을 만들어 **백업·구조 병합**으로 안전하게 설치하고, `manifest.json`으로 추적한다. 재설치는 멱등하고, `uninstall`은 원래 상태로 되돌린다. 실제 API 키·토큰은 저장소에 넣지 않고 **환경변수 참조(`${VAR}`)** 만 둔다.
+
+## 빠른 시작
+
+```bash
+npm install
+npm run build
+
+# 1) 실제 설치 전에 무엇이 바뀔지 미리 본다 (아무것도 쓰지 않음)
+node dist/src/cli.js diff --target=all
+
+# 2) 실제 홈(~/.claude, ~/.codex, ~/.agents)에 설치
+node dist/src/cli.js install --target=all
+
+# 3) 상태 확인
+node dist/src/cli.js status
+```
+
+> 설치가 부담되면 임시 홈에 먼저 예행한다: `install --target=all --home="$(mktemp -d)"`.
+> 이후 실제 도구에서의 사용법은 아래 [사용법](#사용법-claude--codex) 참고.
 
 ## 폴더 구조
 
@@ -149,6 +177,64 @@ node dist/src/cli.js uninstall
 node dist/src/cli.js doctor
 node dist/src/cli.js init                           # 현재 프로젝트에 CLAUDE.md/AGENTS.md 생성
 ```
+
+## 사용법 (Claude / Codex)
+
+`install`은 렌더 결과를 각 도구가 실제로 읽는 위치에 놓는다. 아래는 도구별로 **설치 → 로딩 확인 → 실제 사용**까지의 흐름이다. (`--home`으로 임시 홈에 예행한 뒤 실제 홈에 설치하는 것을 권장한다.)
+
+### Claude Code에서 사용하기
+
+```bash
+node dist/src/cli.js install --target=claude
+```
+
+설치되는 위치와 사용 방식:
+
+| 무엇이 | 어디에 | Claude Code에서 |
+| --- | --- | --- |
+| 공통 지침 | `~/.claude/CLAUDE.md` | 세션 시작 시 사용자 전역 메모리로 자동 로드된다. |
+| 에이전트 | `~/.claude/agents/<name>.md` | 서브에이전트로 인식된다. `/agents`로 확인하거나 작업 성격에 따라 자동 위임된다. |
+| 스킬 | `~/.claude/skills/<name>/SKILL.md` | 스킬로 인식된다. 해당 작업 맥락에서 이름으로 호출된다. |
+| MCP | `~/.claude.json`의 `mcpServers.notion` | Claude Code가 `${NOTION_TOKEN}`을 **환경변수에서 확장**해 서버를 띄운다. |
+| 훅 | `~/.claude/settings.json` + `~/.claude/hooks/*` | 도구 실행 전후에 발화한다. 차단 훅은 **exit 2**로 동작을 막는다(예: `.env` 접근 차단). |
+
+사용 절차:
+
+1. **MCP 토큰 준비** — Notion MCP를 쓰려면 셸(또는 셸 프로필)에 토큰을 넣는다.
+   ```bash
+   export NOTION_TOKEN=secret_xxx   # 실제 값은 저장소가 아니라 환경에만
+   ```
+2. **Claude Code 실행** — `claude`를 켜면 `CLAUDE.md`·서브에이전트·스킬·MCP·훅이 자동 적용된다.
+3. **확인** — `node dist/src/cli.js doctor --target=claude`로 설치 정합성과 MCP 환경변수 설정 여부를 점검한다.
+
+### Codex에서 사용하기
+
+```bash
+node dist/src/cli.js install --target=codex
+```
+
+설치되는 위치와 사용 방식(경로·스키마는 `codex-cli`와 공식 매뉴얼로 검증됨):
+
+| 무엇이 | 어디에 | Codex에서 |
+| --- | --- | --- |
+| 공통 지침 | `~/.codex/AGENTS.md` | 사용자 전역 기본 지침으로 로드된다(프로젝트에 더 구체적인 `AGENTS.md`가 있으면 그쪽이 우선). |
+| 에이전트 | `~/.codex/agents/<name>.toml` | 커스텀 에이전트로 인식된다. |
+| 스킬 | `~/.agents/skills/<name>/SKILL.md` | USER 스킬로 자동 탐색된다. |
+| MCP | `~/.codex/config.toml`의 `[mcp_servers.notion]` | `env_vars = ["NOTION_TOKEN"]`로 **Codex를 띄운 셸의 환경변수를 전달**한다(리터럴 저장 안 함). |
+| 훅 | `~/.codex/hooks.json` + `~/.codex/hooks/*` | `PreToolUse`/`PostToolUse`/`Stop` 등에서 발화한다. 차단은 **exit 2 + stderr 사유**. |
+
+사용 절차:
+
+1. **MCP 토큰 준비** — `env_vars`는 값을 저장하지 않고 **부모 프로세스 환경변수를 전달**하므로, Codex를 실행할 셸에 토큰이 있어야 한다.
+   ```bash
+   export NOTION_TOKEN=secret_xxx
+   codex mcp get notion            # env_vars가 이 변수를 필요로 하는지 확인 가능
+   ```
+2. **훅 신뢰** — Codex는 처음 보는 훅을 신뢰 전까지 실행하지 않는다. 세션에서 `/hooks`로 신뢰하거나, 자동화라면 `codex --dangerously-bypass-hook-trust`로 실행한다.
+3. **Codex 실행** — `codex`를 켜면 `AGENTS.md`·에이전트·스킬·MCP·훅이 적용된다.
+4. **확인** — `node dist/src/cli.js doctor --target=codex`로 정합성과 남은 호환성 경고를 확인한다.
+
+> **한 번에 둘 다**: `install --target=all`로 두 도구에 동시에 설치할 수 있다. 실제 도구가 설정을 읽는지 최종 확인하는 절차는 [`docs/manual-checklist.md`](docs/manual-checklist.md)에 있다.
 
 ## 안전장치와 병합 정책
 
