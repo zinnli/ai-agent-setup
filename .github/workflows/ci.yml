@@ -1,0 +1,64 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node: [20, 22]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+
+      - run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Build
+        run: npm run build
+
+      - name: Tests (unit + snapshot + integration, temp HOME only)
+        run: node --test "dist/tests/**/*.test.js"
+
+      - name: Deterministic double-build (no diff)
+        run: |
+          node dist/src/cli.js build --target=all
+          h1=$(find generated -type f | sort | xargs shasum | shasum)
+          node dist/src/cli.js build --target=all
+          h2=$(find generated -type f | sort | xargs shasum | shasum)
+          test "$h1" = "$h2" || { echo "non-deterministic build"; exit 1; }
+
+      - name: Snapshot drift guard (committed snapshots match a fresh render)
+        run: |
+          node --test "dist/tests/unit/claude-snapshot.test.js" "dist/tests/unit/codex-snapshot.test.js"
+
+      - name: Secret-format guard (no real secrets in fixtures/snapshots/core)
+        run: bash scripts/check-no-secrets.sh
+
+      - name: Git tree clean after build
+        run: |
+          # generated/ and dist/ are gitignored; nothing tracked should change.
+          test -z "$(git status --porcelain)" || { git status --porcelain; echo "working tree dirty after build"; exit 1; }
+
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - name: npm pack + tarball CLI smoke test (unrelated cwd, no real HOME)
+        run: npm run smoke:pack
