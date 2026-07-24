@@ -9,9 +9,11 @@ import { frontmatter } from '../shared/frontmatter.js';
  */
 export function renderAgents(core: CoreModel): GeneratedFile[] {
   return core.agents.map((a) => {
+    // Claude reads subagent frontmatter only when it starts on line 1, so the
+    // provenance banner goes after the frontmatter block, not before it.
     const parts = [
-      managedHeader('md', [a.sourceFile]),
       frontmatter({ name: a.name, description: a.description }),
+      managedHeader('md', [a.sourceFile]),
       `# ${a.name}`,
       a.description,
     ];
