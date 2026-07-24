@@ -9,7 +9,8 @@
 | `CONFLICT` (MCP/hook) | 병합 대상의 소유 경로에 다른 값이 이미 존재. 사용자 값을 유지하려면 그대로, 우리 값으로 덮으려면 `--force`. |
 | `merge target ... malformed` | 대상 `settings.json`/`config.toml`/`hooks.json`이 깨진 JSON/TOML. 우리는 건드리지 않는다. 파일을 고친 뒤 재설치. |
 | 훅이 동작하지 않음 | `core/hooks/*.sh` 실행 권한 확인(`doctor`의 `[hooks]`). 래퍼는 `node`로 JSON을 파싱하므로 PATH에 `node` 필요. |
-| MCP 토큰이 안 먹음 | `${NOTION_TOKEN}` 등 환경변수가 실제로 설정됐는지 확인(`doctor`의 `[mcp]`). Codex는 `${VAR}` 확장 여부가 미확정 → `COMPATIBILITY.md` 참고. |
+| MCP 토큰이 안 먹음 | `${NOTION_TOKEN}` 등 환경변수가 셸에 실제로 설정됐는지 확인(`doctor`의 `[mcp]`). Codex는 `config.toml`의 `env_vars = ["NOTION_TOKEN"]`로 부모 프로세스의 환경변수를 전달하므로, Codex를 띄운 셸에 그 변수가 있어야 한다. Claude는 `~/.claude.json`의 `${VAR}`를 자체 확장한다. |
+| `status`/`list`가 예상과 다름 | `status`는 dry-run 조정 결과(설치 대비 드리프트)를, `list`는 도구별 지원(`yes`/`partial`)을 보여준다. `--json`으로 정확한 필드를 확인. |
 | `generated ... stale` | `core/` 변경 후 `build`를 다시 실행하지 않음. `build`로 갱신. |
 | `... managed file(s) missing` | 설치된 관리 파일이 사라짐. `install`/`update`로 복구. |
 | 실제 도구가 설정을 못 읽음 | 경로·형식은 `docs/manual-checklist.md`로 실제 로딩을 확인. Codex는 `COMPATIBILITY.md`의 미확정 항목부터 점검. |

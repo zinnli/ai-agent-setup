@@ -27,13 +27,13 @@ node dist/src/cli.js install --target=all
 - [ ] `~/.claude/settings.json`의 훅이 발화한다(예: `.env` 읽기 시도 → 차단, exit 2).
 - [ ] 훅 명령의 `${CLAUDE_CONFIG_DIR:-$HOME/.claude}`가 올바로 확장된다.
 
-## Codex 확인
+## Codex 확인 (경로·스키마는 codex-cli 0.142.5 + 공식 매뉴얼로 검증됨)
 
-- [ ] `~/.codex/AGENTS.md`가 사용자 레벨 지침으로 로드된다(경로 확인 — `COMPATIBILITY.md`).
+- [ ] `~/.codex/AGENTS.md`가 사용자 레벨 지침으로 로드된다.
 - [ ] `~/.codex/agents/*.toml` 커스텀 에이전트가 인식된다.
-- [ ] `~/.agents/skills/<name>/SKILL.md`가 스킬로 인식된다.
-- [ ] `~/.codex/config.toml`의 `[mcp_servers.notion]`이 로드되고 `${NOTION_TOKEN}`이 실제로 확장/주입되는지 확인.
-- [ ] `~/.codex/hooks.json`의 훅이 발화하고 차단이 동작한다(PreToolUse `tool_input` 필드명 확인).
+- [ ] `~/.agents/skills/<name>/SKILL.md`가 스킬로 인식된다(USER 스킬 범위).
+- [ ] `~/.codex/config.toml`의 `[mcp_servers.notion]`이 로드된다. `env_vars = ["NOTION_TOKEN"]`이므로 Codex를 띄운 셸에 `NOTION_TOKEN`이 있어야 주입된다(`codex mcp get notion`으로 확인 가능).
+- [ ] `~/.codex/hooks.json`(`{ "hooks": { … } }`)의 훅이 발화하고 차단이 동작한다(`.env` 편집/`cat` 시도 → 차단). 훅 신뢰(`/hooks` 또는 `--dangerously-bypass-hook-trust`)가 필요할 수 있다.
 
 ## 정리
 

@@ -71,6 +71,8 @@ mcp/
 - `servers.yaml`에는 서버 이름·실행 명령·인자·환경변수 이름·활성화 여부를 둔다.
 - **실제 API 키·토큰 값은 저장하지 않는다.** 환경변수 참조(`${NOTION_TOKEN}`)만 둔다.
 
+**환경변수 참조 vs 리터럴** — `env`의 값이 정확히 `${VAR}`(대문자·숫자·`_`) 형태면 *참조*로 취급한다. 참조는 도구별로 부모 프로세스 환경변수를 상속하도록 렌더된다: Claude는 `~/.claude.json`에 `${VAR}` 문자열을 유지(자체 확장), Codex는 `env_vars = ["VAR"]`로 변환(부모 환경변수 전달). `$` 없는 값은 *리터럴*로 보고 Codex `env`에 그대로 들어간다(시크릿이 아닌 값에만 사용). `$VAR`처럼 잘못된 placeholder는 검증 오류이며 리터럴로 저장되지 않는다.
+
 ### `core/hooks/`
 AI의 특정 행동 전후에 실행되는 자동 검사·안전장치 스크립트를 관리한다. instructions가 규칙을 "설명"한다면, hooks는 실행 단계에서 규칙을 "검사·차단"하는 더 강한 제어 수단이다.
 
@@ -115,21 +117,27 @@ node dist/src/cli.js <command> [options]
 | `build` | `core/`를 렌더링해 `generated/<tool>/`에 미리보기를 만든다. HOME을 건드리지 않는다. |
 | `install` | 렌더 결과를 실제 설정 위치에 설치한다(백업·구조 병합). |
 | `update` | 다시 렌더링해 기존 설치와 조정한다(사용자 수정 파일은 보존). |
+| `status` | 설치 상태·드리프트·도구별 요약을 보여준다(읽기 전용). |
+| `list` | core의 instructions·agents·skills·hooks·MCP와 도구별 지원 여부를 나열한다. |
 | `diff` | 설치/업데이트가 무엇을 바꿀지 미리 본다(쓰기 없음). |
 | `uninstall` | 관리 파일 제거·백업 복원, 병합 항목만 정리한다. |
 | `doctor` | 환경·`core/`·생성물·설치 상태를 점검한다(읽기 전용). |
 | `init` | 감지한 프로젝트 정보로 프로젝트용 `CLAUDE.md`·`AGENTS.md`를 만든다. |
+
+조회 명령(`status`·`list`·`diff`·`doctor`)은 하나의 내부 결과 모델을 텍스트와 JSON 두 포매터로 렌더한다. 사람용 출력과 `--json` 출력은 같은 계산을 공유한다.
 
 ### 공통 옵션
 
 | 옵션 | 설명 |
 | --- | --- |
 | `--target=claude\|codex\|all` | 대상 도구 (기본 `all`) |
+| `--json` | 기계용 JSON 출력 (`status`·`list`·`diff`·`doctor`) |
 | `--home=<dir>` | 실제 HOME 대신 이 디렉터리에 작업 (테스트·미리보기용) |
 | `--dry-run` | 아무것도 쓰지 않고 계획만 표시 |
 | `--force` | 검증 오류·충돌·사용자 수정 파일을 무릅쓰고 진행 |
-| `--verbose` | 상세 로그 |
+| `--verbose` | 상세 로그 (`doctor --verbose`는 예상/실제 해시·stale 파일·소스 위치 등 추가) |
 | `--dir=<dir>` | `init` 대상 프로젝트 디렉터리 |
+| `-v, --version` | 버전 출력 |
 
 ### 예시
 
@@ -159,7 +167,27 @@ node dist/src/cli.js init                           # 현재 프로젝트에 CLA
 
 ## Claude와 Codex 차이
 
-두 도구가 동일하다고 가정하지 않는다. 각 어댑터의 이벤트·매처·필드 매핑은 독립적으로 검증한다. 특정 필드·매핑이 공식적으로 확인되지 않으면 억지로 맞추지 않고 `generated/<tool>/COMPATIBILITY.md`에 개별 항목으로 기록하며, `doctor`가 경고로 노출한다(카테고리 전체를 미지원으로 처리하지 않음).
+두 도구가 동일하다고 가정하지 않는다. 각 어댑터의 이벤트·매처·필드 매핑은 독립적으로 검증한다(설치된 `codex-cli`와 공식 매뉴얼 기준). 현재 지원 상태:
+
+- **동등하게 지원**: instructions, agents, skills, MCP 서버, 훅 4종 — 양쪽 모두 네이티브.
+- **Codex 검증 완료**: `~/.codex/AGENTS.md`(사용자 전역), `~/.agents/skills/<name>/`(USER 스킬), `config.toml` MCP(`env`=리터럴, `env_vars`=참조 전달), `hooks.json`(`{ "hooks": { … } }` 구조 + 도구명 매처 + `tool_input.command`).
+- **남은 개별 경고 1건**: Codex `apply_patch`/`Edit`/`Write`는 편집 경로를 `tool_input.command`(패치 텍스트) 안에 담아, 파일 접근 훅이 깔끔한 `file_path` 대신 그 텍스트를 검사한다.
+
+확인되지 않은 개별 필드·매핑만 `generated/<tool>/COMPATIBILITY.md`에 기록하고 `doctor`가 경고로 노출한다(카테고리 전체를 미지원으로 처리하지 않음).
+
+## 로컬 CLI 패키지
+
+`npm pack`으로 만든 tarball은 `dist/`와 기본 `core/`만 담는다(테스트·소스맵·로컬 설정 제외).
+
+```bash
+npm run build
+npm pack                       # ai-agent-setup-<ver>.tgz 생성
+npm i -g ./ai-agent-setup-*.tgz   # 또는 임시 디렉터리에 설치
+ai-agent-setup --version
+ai-agent-setup build --target=all
+```
+
+`npm run smoke:pack`은 pack → 임시 디렉터리 설치 → 무관한 cwd에서 CLI 실행까지 자동 검증한다(실제 HOME 미변경). CI(`.github/workflows/ci.yml`)는 typecheck·build·전체 테스트(임시 HOME)·결정적 이중 빌드·스냅샷 드리프트·시크릿 형식 검사·tarball 스모크를 Node 20/22에서 실행한다.
 
 ## 개발
 

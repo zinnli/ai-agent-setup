@@ -56,3 +56,8 @@ servers:
       SOME_TOKEN: ${SOME_TOKEN}   # 값이 아니라 참조만
 ```
 비활성(`enabled: false`) 서버는 렌더에서 제외된다. 실제 토큰은 넣지 않는다.
+
+`env` 값 규칙:
+- `${UPPER_SNAKE}` — *참조*. Claude는 `${VAR}` 문자열 유지(자체 확장), Codex는 `env_vars = ["VAR"]`로 부모 환경변수를 전달한다. **키 이름과 참조 변수명이 같아야** Codex가 그대로 전달할 수 있다(다르면 `COMPATIBILITY.md`에 기록되고 생략).
+- `$` 없는 값 — *리터럴*. Codex `env`에 그대로 들어간다. 시크릿이 아닌 값에만 사용(검증에서 "possible literal secret" 경고).
+- `$VAR`·`${lower}`·`a-${V}` 같은 잘못된 placeholder — 검증 **오류**. 리터럴 시크릿처럼 저장되지 않는다.
