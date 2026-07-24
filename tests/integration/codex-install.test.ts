@@ -64,10 +64,10 @@ test('codex uninstall restores config.toml to the user original', () => {
 test('codex hooks.json merge preserves a user hook and appends ours', () => {
   const t = makeTempHome();
   try {
-    t.writeJson('.codex/hooks.json', { PreToolUse: [{ matcher: 'x', hooks: [{ type: 'command', command: 'mine.sh' }] }] });
+    t.writeJson('.codex/hooks.json', { hooks: { PreToolUse: [{ matcher: 'x', hooks: [{ type: 'command', command: 'mine.sh' }] }] } });
     runInstall(opts(t.home));
     const h = t.readJson('.codex/hooks.json');
-    const commands = h.PreToolUse.flatMap((e: any) => e.hooks.map((x: any) => x.command));
+    const commands = h.hooks.PreToolUse.flatMap((e: any) => e.hooks.map((x: any) => x.command));
     assert.ok(commands.includes('mine.sh'), 'user hook preserved');
     assert.ok(commands.some((c: string) => c.includes('CODEX_HOME')), 'our wrapper appended');
   } finally {
@@ -102,10 +102,16 @@ test('codex hook wrapper bridges JSON stdin -> exit 2 block / exit 0 allow', () 
     const run = (wrapper: string, input: string) =>
       spawnSync('bash', [path.join(dir, wrapper)], { input, encoding: 'utf8' }).status;
 
-    assert.equal(run('protect-secrets.wrapper.sh', JSON.stringify({ tool_input: { file_path: '/p/.env' } })), 2);
-    assert.equal(run('protect-secrets.wrapper.sh', JSON.stringify({ tool_input: { file_path: '/p/a.ts' } })), 0);
-    assert.equal(run('block-destructive-command.wrapper.sh', JSON.stringify({ tool_input: { command: 'rm -rf x' } })), 2);
-    assert.equal(run('protect-secrets.wrapper.sh', 'malformed'), 0, 'fails safe');
+    // Codex delivers the shell command AND the apply_patch text in tool_input.command.
+    assert.equal(run('protect-secrets.wrapper.sh', JSON.stringify({ tool_input: { command: 'cat /p/.env' } })), 2, 'blocks .env read');
+    assert.equal(run('protect-secrets.wrapper.sh', JSON.stringify({ tool_input: { command: 'cat /p/a.ts' } })), 0, 'allows normal source');
+    // apply_patch path is embedded in the patch text — the guard still catches it.
+    assert.equal(run('protect-secrets.wrapper.sh', JSON.stringify({ tool_input: { command: '*** Begin Patch\n*** Update File: config/.env' } })), 2, 'blocks apply_patch touching .env');
+    assert.equal(run('protect-secrets.wrapper.sh', JSON.stringify({ tool_input: { command: 'cat ~/.ssh/id_rsa' } })), 2, 'blocks ssh key');
+    assert.equal(run('block-destructive-command.wrapper.sh', JSON.stringify({ tool_input: { command: 'rm -rf x' } })), 2, 'blocks destructive');
+    assert.equal(run('block-destructive-command.wrapper.sh', JSON.stringify({ tool_input: { command: 'ls -la' } })), 0, 'allows normal command');
+    assert.equal(run('protect-secrets.wrapper.sh', 'malformed'), 0, 'malformed JSON fails safe (no crash, no block)');
+    assert.equal(run('protect-secrets.wrapper.sh', JSON.stringify({})), 0, 'missing tool_input does not crash');
   } finally {
     rmSync(home, { recursive: true, force: true });
   }

@@ -55,6 +55,23 @@ test('validate: literal (non-${VAR}) mcp env value warns of a possible secret', 
   assert.ok(hasWarn(validateCore(core), 'possible literal secret'));
 });
 
+test('validate: malformed ${VAR} placeholder is an error, never stored literally', () => {
+  const core = emptyCore();
+  core.mcpServers = [
+    { name: 's', enabled: true, transport: 'stdio', command: 'x', args: [], env: { TOK: '$NOTION_TOKEN' }, sourceFile: 'servers.yaml' },
+  ];
+  assert.ok(hasError(validateCore(core), 'malformed ${VAR} reference'));
+});
+
+test('validate: clean ${VAR} reference produces no mcp diagnostic', () => {
+  const core = emptyCore();
+  core.mcpServers = [
+    { name: 's', enabled: true, transport: 'stdio', command: 'x', args: [], env: { NOTION_TOKEN: '${NOTION_TOKEN}' }, sourceFile: 'servers.yaml' },
+  ];
+  const diags = validateCore(core);
+  assert.ok(!diags.some((d) => d.category === 'mcp'), 'a clean reference is fully supported');
+});
+
 test('validate: stdio server without command is an error', () => {
   const core = emptyCore();
   core.mcpServers = [

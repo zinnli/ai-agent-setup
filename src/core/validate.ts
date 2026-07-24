@@ -1,7 +1,6 @@
 import path from 'node:path';
 import type { CoreModel, Diagnostic } from './model.js';
-
-const VAR_REF = /^\$\{[A-Z0-9_]+\}$/;
+import { classifyMcpEnv } from '../adapters/shared/mcp-env.js';
 
 /**
  * Whole-model validation: schema completeness + cross-references. Loaders stay
@@ -61,10 +60,15 @@ export function validateCore(core: CoreModel): Diagnostic[] {
     if ((m.transport === 'sse' || m.transport === 'http') && !m.url) {
       req(diags, m.sourceFile, 'mcp', `mcp server "${m.name}" is ${m.transport} but has no url.`);
     }
-    for (const [key, val] of Object.entries(m.env)) {
-      if (!VAR_REF.test(val)) {
-        diags.push({ level: 'warn', category: 'mcp', message: `mcp server "${m.name}" env "${key}" is not a \${VAR} reference — possible literal secret.`, sourceFile: m.sourceFile });
-      }
+    const env = classifyMcpEnv(m.env);
+    for (const { key, value } of env.malformed) {
+      diags.push({ level: 'error', category: 'mcp', message: `mcp server "${m.name}" env "${key}" = "${value}" is a malformed \${VAR} reference (use exactly \${UPPER_SNAKE}); it must not be stored as a literal.`, sourceFile: m.sourceFile });
+    }
+    for (const { key, ref } of env.renamed) {
+      diags.push({ level: 'warn', category: 'mcp', message: `mcp server "${m.name}" env "${key}" references a differently-named var \${${ref}} — Codex env_vars cannot rename; use \${${key}} or record it in COMPATIBILITY.`, sourceFile: m.sourceFile });
+    }
+    for (const key of Object.keys(env.literal)) {
+      diags.push({ level: 'warn', category: 'mcp', message: `mcp server "${m.name}" env "${key}" is a literal value (not a \${VAR} reference) — possible literal secret.`, sourceFile: m.sourceFile });
     }
   }
 

@@ -5,18 +5,18 @@ import { managedHeader } from '../shared/managed-header.js';
 /**
  * Generate the Codex-side wrapper script for a neutral hook.
  *
- * Protocol bridge (verified against Codex hooks docs): Codex delivers the event
- * as JSON on stdin and treats **exit code 2** (with a reason on stderr) as a
- * blocking decision for PreToolUse — the same exit convention as Claude, but the
- * two schemas are validated separately. The neutral core script takes a plain
- * string on $1/stdin and signals with exit 1; the wrapper extracts the relevant
- * field, calls the script, and maps a blocking non-zero exit to 2. Non-blocking
- * hooks always exit 0.
+ * Protocol bridge (verified against codex-cli 0.142.5 + learn.chatgpt.com/docs/hooks):
+ * Codex delivers the event as one JSON object on stdin and accepts **exit code 2**
+ * (with a reason on stderr) as a block for a PreToolUse tool call — the same exit
+ * convention as Claude, but the two schemas are validated separately. The neutral
+ * core script takes a plain string on $1/stdin and signals with exit 1; the
+ * wrapper extracts `tool_input.command` (which carries the shell command for Bash
+ * AND the patch text for apply_patch/Edit/Write), calls the script, and maps a
+ * blocking non-zero exit to 2. Non-blocking hooks always exit 0.
  *
- * NOTE: the exact tool_input field names in Codex's PreToolUse payload are not
- * enumerated in the official docs, so extraction targets the Claude-compatible
- * tool_input.{command,file_path} shape as a best effort. This assumption is
- * recorded in COMPATIBILITY.md and should be confirmed in the manual checklist.
+ * NOTE: apply_patch delivers the target path embedded in the patch text rather
+ * than a dedicated field, so the secret guard matches against that text. This
+ * single caveat is recorded in COMPATIBILITY.md.
  */
 export function renderCodexHookWrapper(
   hook: Hook,

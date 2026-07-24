@@ -13,9 +13,12 @@ interface CodexHookEntry {
 
 /**
  * Render Codex hooks: copy each neutral script, emit its wrapper shim, and build
- * the hooks.json merge fragment. Codex's hooks.json is keyed DIRECTLY by event
- * name at the top level (verified) — unlike Claude's settings.json which nests
- * under "hooks". Commands respect a custom CODEX_HOME and are quoted for spaces.
+ * the hooks.json merge fragment. Verified against codex-cli 0.142.5 + the manual:
+ * hooks.json nests events under a top-level "hooks" object (e.g.
+ * { "hooks": { "PreToolUse": [ { matcher, hooks:[{type,command}] } ] } }) — the
+ * same shape as Claude's settings.json, and matched by the inline TOML
+ * [[hooks.PreToolUse]] form. Commands respect a custom CODEX_HOME and are quoted
+ * for spaces.
  */
 export function renderHooks(core: CoreModel): GeneratedFile[] {
   if (core.hooks.length === 0) return [];
@@ -53,11 +56,11 @@ export function renderHooks(core: CoreModel): GeneratedFile[] {
 
   files.push({
     relativePath: 'hooks.json',
-    content: JSON.stringify(events, null, 2) + '\n',
+    content: JSON.stringify({ hooks: events }, null, 2) + '\n',
     sourceFiles: [...sources, manifestFile],
     managed: false,
     mergeTarget: '~/.codex/hooks.json',
-    managedPaths: Object.keys(events),
+    managedPaths: Object.keys(events).map((event) => `hooks.${event}`),
     mergeStrategy: 'append-array',
     format: 'json',
   });

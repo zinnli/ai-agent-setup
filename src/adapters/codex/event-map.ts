@@ -1,27 +1,39 @@
 import type { Hook, HookTrigger } from '../../core/model.js';
 
 /**
- * Codex-specific mapping of a neutral hook trigger to a Codex hook event. Verified
- * against the official Codex hooks schema (events PreToolUse/PostToolUse/Stop;
- * exit code 2 blocks a PreToolUse). This mapping is validated independently of
- * Claude's — do not assume the two are interchangeable.
+ * Codex-specific mapping of a neutral hook trigger to a Codex hook event +
+ * matcher. Verified against codex-cli 0.142.5 + the official hooks reference
+ * (learn.chatgpt.com/docs/hooks):
  *
- * `matcher` is intentionally OMITTED: the official docs do not enumerate Codex's
- * exact tool names, so narrowing by matcher would be an unverified assumption.
- * Instead each hook fires on all occurrences of its event and the wrapper decides
- * based on the extracted content (a missing field simply yields "allow"). This
- * choice is recorded per-hook in COMPATIBILITY.md.
+ * - Events: PreToolUse, PostToolUse, Stop (among others).
+ * - `matcher` is a regex over the TOOL NAME. Shell = `Bash`; file edits =
+ *   `apply_patch` (also matchable as `Edit`/`Write`). Stop ignores `matcher`.
+ * - Every command hook receives one JSON object on stdin. For PreToolUse/
+ *   PostToolUse the shell command (Bash) AND the patch text (apply_patch) both
+ *   live in `tool_input.command`; there is no separate `file_path` field.
+ *
+ * This mapping is validated independently of Claude's — do not assume the two
+ * are interchangeable.
  */
 export interface CodexEventMapping {
   event: 'PreToolUse' | 'PostToolUse' | 'Stop';
+  /** regex over tool name; omitted where the event ignores matchers (Stop). */
   matcher?: string;
+  /** tool_input.* fields the wrapper extracts, in priority order. */
   extractFields: string[];
 }
 
+const FILE_TOOLS = 'apply_patch|Edit|Write';
+
 const TABLE: Record<HookTrigger, CodexEventMapping> = {
-  'before-command': { event: 'PreToolUse', extractFields: ['command'] },
-  'before-file-access': { event: 'PreToolUse', extractFields: ['file_path', 'command', 'notebook_path'] },
-  'after-file-change': { event: 'PostToolUse', extractFields: [] },
+  // Shell commands match as `Bash` (covers unified exec too).
+  'before-command': { event: 'PreToolUse', matcher: 'Bash', extractFields: ['command'] },
+  // Secret guard must see both shell reads (cat .env) and edits. apply_patch/Edit/
+  // Write deliver the patch text in tool_input.command, so `command` covers both.
+  'before-file-access': { event: 'PreToolUse', matcher: `Bash|${FILE_TOOLS}`, extractFields: ['command'] },
+  // Post-edit formatter operates on git-changed files, so it needs no field.
+  'after-file-change': { event: 'PostToolUse', matcher: FILE_TOOLS, extractFields: [] },
+  // Stop ignores matcher; hook works from workspace/git state.
   'before-finish': { event: 'Stop', extractFields: [] },
 };
 

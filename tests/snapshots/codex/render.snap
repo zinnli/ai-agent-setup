@@ -241,9 +241,7 @@ managedPaths: mcp_servers.notion
 [mcp_servers.notion]
 command = "npx"
 args = [ "-y", "@notionhq/notion-mcp-server" ]
-
-  [mcp_servers.notion.env]
-  NOTION_TOKEN = "${NOTION_TOKEN}"
+env_vars = [ "NOTION_TOKEN" ]
 
 
 === [install] hooks.json (managed=false) ===
@@ -251,47 +249,52 @@ sources: core/hooks/block-destructive-command.sh, core/hooks/format-changed-file
 mergeTarget: ~/.codex/hooks.json
 format: json
 strategy: append-array
-managedPaths: PreToolUse, PostToolUse, Stop
+managedPaths: hooks.PreToolUse, hooks.PostToolUse, hooks.Stop
 ---
 {
-  "PreToolUse": [
-    {
-      "hooks": [
-        {
-          "type": "command",
-          "command": "\"${CODEX_HOME:-$HOME/.codex}/hooks/block-destructive-command.wrapper.sh\""
-        }
-      ]
-    },
-    {
-      "hooks": [
-        {
-          "type": "command",
-          "command": "\"${CODEX_HOME:-$HOME/.codex}/hooks/protect-secrets.wrapper.sh\""
-        }
-      ]
-    }
-  ],
-  "PostToolUse": [
-    {
-      "hooks": [
-        {
-          "type": "command",
-          "command": "\"${CODEX_HOME:-$HOME/.codex}/hooks/format-changed-files.wrapper.sh\""
-        }
-      ]
-    }
-  ],
-  "Stop": [
-    {
-      "hooks": [
-        {
-          "type": "command",
-          "command": "\"${CODEX_HOME:-$HOME/.codex}/hooks/validate-before-finish.wrapper.sh\""
-        }
-      ]
-    }
-  ]
+  "hooks": {
+    "PreToolUse": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"${CODEX_HOME:-$HOME/.codex}/hooks/block-destructive-command.wrapper.sh\""
+          }
+        ],
+        "matcher": "Bash"
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"${CODEX_HOME:-$HOME/.codex}/hooks/protect-secrets.wrapper.sh\""
+          }
+        ],
+        "matcher": "Bash|apply_patch|Edit|Write"
+      }
+    ],
+    "PostToolUse": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"${CODEX_HOME:-$HOME/.codex}/hooks/format-changed-files.wrapper.sh\""
+          }
+        ],
+        "matcher": "apply_patch|Edit|Write"
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"${CODEX_HOME:-$HOME/.codex}/hooks/validate-before-finish.wrapper.sh\""
+          }
+        ]
+      }
+    ]
+  }
 }
 
 
@@ -495,7 +498,7 @@ DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 input="$(cat)"
 
 # Best-effort extraction of tool_input.* from Codex's event JSON.
-payload="$(printf '%s' "$input" | AAS_FIELDS="file_path,command,notebook_path" node -e 'let s="";process.stdin.on("data",d=>s+=d);process.stdin.on("end",()=>{try{const j=JSON.parse(s);const ti=(j&&j.tool_input)||{};for(const f of (process.env.AAS_FIELDS||"").split(",")){if(ti[f]){process.stdout.write(String(ti[f]));break;}}}catch(e){}});' 2>/dev/null)"
+payload="$(printf '%s' "$input" | AAS_FIELDS="command" node -e 'let s="";process.stdin.on("data",d=>s+=d);process.stdin.on("end",()=>{try{const j=JSON.parse(s);const ti=(j&&j.tool_input)||{};for(const f of (process.env.AAS_FIELDS||"").split(",")){if(ti[f]){process.stdout.write(String(ti[f]));break;}}}catch(e){}});' 2>/dev/null)"
 
 "$DIR/protect-secrets.sh" "$payload"
 code=$?
