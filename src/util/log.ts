@@ -19,6 +19,18 @@ export function createLogger(opts: { verbose?: boolean } = {}): Logger {
   };
 }
 
+/**
+ * A logger that swallows info/warn/debug (keeps errors) — used while COMPUTING a
+ * report model so the inspection commands can drive install/diff planning
+ * without leaking their progress logs into --json or text output.
+ */
+export const silentLogger: Logger = {
+  info: () => {},
+  warn: () => {},
+  error: (m) => console.error(`✗ ${m}`),
+  debug: () => {},
+};
+
 /** Print diagnostics; returns true if any error-level diagnostic is present. */
 export function reportDiagnostics(diags: Diagnostic[], log: Logger): boolean {
   let hasError = false;
