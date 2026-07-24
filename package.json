@@ -6,15 +6,23 @@
   "bin": {
     "ai-agent-setup": "dist/src/cli.js"
   },
+  "files": [
+    "dist/src/**/*.js",
+    "core",
+    "README.md",
+    "LICENSE"
+  ],
   "engines": {
     "node": ">=20"
   },
   "scripts": {
     "build": "tsc",
+    "typecheck": "tsc --noEmit",
     "watch": "tsc --watch",
     "cli": "node dist/src/cli.js",
     "test": "npm run build && node --test \"dist/tests/**/*.test.js\"",
     "test:unit": "npm run build && node --test \"dist/tests/unit/**/*.test.js\"",
+    "smoke:pack": "bash scripts/smoke-pack.sh",
     "clean": "rm -rf dist"
   },
   "dependencies": {
