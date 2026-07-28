@@ -1,9 +1,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { runInstall } from '../../src/commands/install.js';
-import { computeStatus } from '../../src/commands/status.js';
-import { computeList } from '../../src/commands/list.js';
-import { computeDoctor } from '../../src/commands/doctor.js';
+import { runInstall } from '../../commands/install.js';
+import { computeStatus } from '../../commands/status.js';
+import { computeList } from '../../commands/list.js';
+import { computeDoctor } from '../../commands/doctor.js';
 import { makeTempHome, silentLogger } from '../helpers/temp-home.js';
 
 const opts = (home: string, extra: Record<string, unknown> = {}) => ({ target: 'all', home, logger: silentLogger, ...extra });

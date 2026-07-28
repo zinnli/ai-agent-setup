@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { loadCore } from '../../src/core/load.js';
+import { loadCore } from '../../loader/load.js';
 import { minimalCore } from '../helpers/paths.js';
 
 test('loadCore: instruction ordering follows order.yaml, unlisted appended with warn', () => {

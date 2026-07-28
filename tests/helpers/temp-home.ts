@@ -1,7 +1,7 @@
 import { mkdtempSync, rmSync, readFileSync, existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
-import type { Logger } from '../../src/util/log.js';
+import type { Logger } from '../../util/log.js';
 
 /** A throwaway HOME under the system temp dir (never the real HOME). */
 export interface TempHome {

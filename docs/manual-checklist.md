@@ -6,16 +6,16 @@
 
 ```bash
 TMP=$(mktemp -d)
-node dist/src/cli.js install --target=all --home="$TMP"
+node dist/cli.js install --target=all --home="$TMP"
 find "$TMP" -type f -not -path '*/.ai-agent-setup/*' | sort
-node dist/src/cli.js doctor --target=all --home="$TMP"
-node dist/src/cli.js uninstall --target=all --home="$TMP"
+node dist/cli.js doctor --target=all --home="$TMP"
+node dist/cli.js uninstall --target=all --home="$TMP"
 ```
 
 ## 실제 설치
 
 ```bash
-node dist/src/cli.js install --target=all
+node dist/cli.js install --target=all
 ```
 
 ## Claude Code 확인
@@ -38,7 +38,7 @@ node dist/src/cli.js install --target=all
 ## 정리
 
 ```bash
-node dist/src/cli.js uninstall --target=all
+node dist/cli.js uninstall --target=all
 ```
 
 `uninstall` 후 기존 사용자 설정(`settings.json`·`config.toml`·`~/.claude.json`의 사용자 키)이 그대로 남아 있는지 확인한다.

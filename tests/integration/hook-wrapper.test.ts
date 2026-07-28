@@ -4,8 +4,8 @@ import { mkdtempSync, mkdirSync, writeFileSync, chmodSync, rmSync } from 'node:f
 import { spawnSync } from 'node:child_process';
 import path from 'node:path';
 import os from 'node:os';
-import { loadCore } from '../../src/core/load.js';
-import { renderHooks } from '../../src/adapters/claude/hooks.js';
+import { loadCore } from '../../loader/load.js';
+import { renderHooks } from '../../adapters/claude/hooks.js';
 import { projectRoot } from '../helpers/paths.js';
 
 /**

@@ -4,10 +4,15 @@
   "description": "Render tool-neutral core/ config into Claude Code and Codex formats, and install it.",
   "type": "module",
   "bin": {
-    "ai-agent-setup": "dist/src/cli.js"
+    "ai-agent-setup": "dist/cli.js"
   },
   "files": [
-    "dist/src/**/*.js",
+    "dist/cli.js",
+    "dist/adapters/**/*.js",
+    "dist/commands/**/*.js",
+    "dist/loader/**/*.js",
+    "dist/fs/**/*.js",
+    "dist/util/**/*.js",
     "core",
     "README.md",
     "LICENSE"
@@ -19,7 +24,7 @@
     "build": "tsc",
     "typecheck": "tsc --noEmit",
     "watch": "tsc --watch",
-    "cli": "node dist/src/cli.js",
+    "cli": "node dist/cli.js",
     "test": "npm run build && node --test \"dist/tests/**/*.test.js\"",
     "test:unit": "npm run build && node --test \"dist/tests/unit/**/*.test.js\"",
     "smoke:pack": "bash scripts/smoke-pack.sh",

@@ -4,11 +4,11 @@ import { existsSync } from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
 import TOML from '@iarna/toml';
-import { runInstall } from '../../src/commands/install.js';
-import { runUninstall } from '../../src/commands/uninstall.js';
-import { runDiff } from '../../src/commands/diff.js';
-import { computeStatus } from '../../src/commands/status.js';
-import { computeDoctor } from '../../src/commands/doctor.js';
+import { runInstall } from '../../commands/install.js';
+import { runUninstall } from '../../commands/uninstall.js';
+import { runDiff } from '../../commands/diff.js';
+import { computeStatus } from '../../commands/status.js';
+import { computeDoctor } from '../../commands/doctor.js';
 import { makeTempHome, silentLogger } from '../helpers/temp-home.js';
 
 const opts = (home: string, extra: Record<string, unknown> = {}) => ({ target: 'all', home, logger: silentLogger, ...extra });

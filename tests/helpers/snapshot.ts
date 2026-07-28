@@ -1,7 +1,7 @@
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
 import path from 'node:path';
 import assert from 'node:assert/strict';
-import type { GeneratedFile } from '../../src/adapters/types.js';
+import type { GeneratedFile } from '../../adapters/types.js';
 import { projectRoot, snapshotsDir } from './paths.js';
 
 /** Deterministic, machine-independent serialization of rendered files. */

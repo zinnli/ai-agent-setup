@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { validateCore } from '../../src/core/validate.js';
-import type { CoreModel } from '../../src/core/model.js';
+import { validateCore } from '../../loader/validate.js';
+import type { CoreModel } from '../../loader/model.js';
 
 function emptyCore(): CoreModel {
   return { instructions: [], agents: [], skills: [], hooks: [], mcpServers: [] };

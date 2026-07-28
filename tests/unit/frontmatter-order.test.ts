@@ -1,9 +1,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import path from 'node:path';
-import { loadCore } from '../../src/core/load.js';
-import { claudeAdapter } from '../../src/adapters/claude/index.js';
-import { codexAdapter } from '../../src/adapters/codex/index.js';
+import { loadCore } from '../../loader/load.js';
+import { claudeAdapter } from '../../adapters/claude/index.js';
+import { codexAdapter } from '../../adapters/codex/index.js';
 import { projectRoot } from '../helpers/paths.js';
 
 /**

@@ -1,14 +1,14 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import TOML from '@iarna/toml';
-import { mapCodexEvent } from '../../src/adapters/codex/event-map.js';
-import { renderMcp } from '../../src/adapters/codex/mcp.js';
-import { renderHooks } from '../../src/adapters/codex/hooks.js';
-import { renderAgents } from '../../src/adapters/codex/agents.js';
-import { codexAdapter } from '../../src/adapters/codex/index.js';
-import type { CoreModel, Hook } from '../../src/core/model.js';
+import { mapCodexEvent } from '../../adapters/codex/event-map.js';
+import { renderMcp } from '../../adapters/codex/mcp.js';
+import { renderHooks } from '../../adapters/codex/hooks.js';
+import { renderAgents } from '../../adapters/codex/agents.js';
+import { codexAdapter } from '../../adapters/codex/index.js';
+import type { CoreModel, Hook } from '../../loader/model.js';
 import path from 'node:path';
-import { loadCore } from '../../src/core/load.js';
+import { loadCore } from '../../loader/load.js';
 import { minimalCore, projectRoot } from '../helpers/paths.js';
 
 function base(): CoreModel {

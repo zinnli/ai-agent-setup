@@ -35,9 +35,9 @@ jobs:
 
       - name: Deterministic double-build (no diff)
         run: |
-          node dist/src/cli.js build --target=all
+          node dist/cli.js build --target=all
           h1=$(find generated -type f | sort | xargs shasum | shasum)
-          node dist/src/cli.js build --target=all
+          node dist/cli.js build --target=all
           h2=$(find generated -type f | sort | xargs shasum | shasum)
           test "$h1" = "$h2" || { echo "non-deterministic build"; exit 1; }
 

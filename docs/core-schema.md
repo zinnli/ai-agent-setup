@@ -2,7 +2,7 @@
 
 `core/`는 도구 비종속 원본이다. 도구 전용 형식(CLAUDE.md, AGENTS.md, frontmatter, TOML, settings.json 등)을 여기 넣지 않는다 — 그건 어댑터가 만든다.
 
-## 정규화 모델 (`src/core/model.ts`)
+## 정규화 모델 (`loader/model.ts`)
 
 - **Instruction** `{ id, order, content, sourceFile }`
 - **Agent** `{ name, description, mode, skills[], instructions[], sourceFile }`
@@ -10,7 +10,7 @@
 - **Hook** `{ id, scriptFile, trigger, blocking, targets[], env?, description? }`
 - **McpServer** `{ name, enabled, transport, command?, args[], env, url?, sourceFile }`
 
-검증(`src/core/validate.ts`)은 필수 필드, `Skill.name === 폴더명`, 에이전트→스킬·스킬→스킬 참조, 훅 매니페스트 ↔ 스크립트 정합성, MCP `env`가 `${VAR}` 형태인지 등을 확인한다.
+검증(`loader/validate.ts`)은 필수 필드, `Skill.name === 폴더명`, 에이전트→스킬·스킬→스킬 참조, 훅 매니페스트 ↔ 스크립트 정합성, MCP `env`가 `${VAR}` 형태인지 등을 확인한다.
 
 ## 지침 추가
 `core/instructions/<topic>.md`를 만들고 `core/instructions/order.yaml`의 `order`에 파일 stem을 추가한다. 뒤에 올수록 우선한다(맨 뒤 = 최우선). 목록에 없으면 뒤에 붙고 경고가 뜬다.
