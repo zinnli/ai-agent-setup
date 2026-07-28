@@ -37,21 +37,42 @@ node dist/cli.js status
 
 ## 폴더 구조
 
-저장소 최상위는 **역할이 뚜렷이 다른 두 종류**로 나뉜다. 이 둘을 절대 섞지 않는다.
+저장소 최상위는 크게 **① 설치되는 "내용"(`core/`) · ② 사람용 "설명서"(`docs/`) · ③ 그 내용을 변환·설치·검증하는 "코드"(나머지)** 로 나뉜다. `core/`와 `docs/`는 절대 섞지 않는다.
 
 ```
 ai-agent-setup/
-├── core/        ← 설치되는 "내용" (AI가 읽음)      ─ 도구 비종속 중립 소스
-├── docs/        ← 사람이 읽는 "설명서" (설치 안 됨) ─ 이 도구의 동작·설계 문서
+├── core/        설치되는 "내용" (AI가 읽음) — 도구 비종속 중립 소스
+├── docs/        사람이 읽는 "설명서" (설치 안 됨)
 │
-├── adapters/    core/를 도구별 형식으로 렌더 (adapters/claude, adapters/codex, adapters/shared)
-├── loader/      core/를 파싱·검증해 CoreModel로 만드는 로더
-├── commands/    CLI 하위 명령 (build/install/update/diff/…)
+├── loader/      core/를 파싱·검증해 CoreModel로 변환
+├── adapters/    CoreModel을 도구별 형식으로 렌더 (claude·codex·shared)
+├── commands/    CLI 하위 명령 (build/install/update/…)
 ├── fs/          설치 인프라 (원자적 쓰기·백업·구조 병합·매니페스트)
 ├── util/        공용 유틸 (경로·해시·로깅 등)
 ├── cli.ts       CLI 진입점
-└── tests/       단위·통합·스냅샷 테스트 (실제 HOME 미변경)
+│
+├── scripts/     보조 셸 스크립트 (시크릿 검사·pack 스모크)
+├── tests/       단위·통합·스냅샷 테스트 (실제 HOME 미변경)
+├── generated/   build 미리보기 산출물 (gitignore)
+└── dist/        tsc 빌드 출력 (gitignore)
 ```
+
+### 폴더별 역할
+
+| 경로 | 분류 | 역할 |
+| --- | --- | --- |
+| `core/` | 내용(설치됨) | 도구 비종속 중립 소스. 지침·에이전트·스킬·MCP·훅의 원본. 유일하게 실제로 "설치되는" 내용. |
+| `docs/` | 설명서 | 이 저장소를 사람이 읽는 문서. 주제별로 나뉨. 어디에도 설치되지 않음. |
+| `loader/` | 코드 | `core/`를 파싱·검증해 정규화된 `CoreModel`로 만드는 로더. |
+| `adapters/` | 코드 | `CoreModel`을 각 도구 형식의 파일로 렌더. 도구별 `claude`/`codex`, 공통 로직은 `shared/`. |
+| `commands/` | 코드 | CLI 하위 명령 구현 (build·install·update·status·list·diff·uninstall·doctor·init). |
+| `fs/` | 코드 | 설치 인프라: 원자적 쓰기, 백업, 구조 병합(JSON/TOML), 매니페스트, 경로 해석. |
+| `util/` | 코드 | 경로·해시·로깅·JSON 등 공용 유틸. |
+| `cli.ts` | 코드 | 인자를 파싱해 `commands/`로 위임하는 진입점. |
+| `scripts/` | 보조 | 저장소용 셸 스크립트 (시크릿 형식 검사, tarball pack 스모크). |
+| `tests/` | 테스트 | 단위·통합·스냅샷 테스트. 항상 임시 HOME 사용(실제 HOME 미변경). |
+| `generated/` | 산출물 | `build`가 만드는 도구별 미리보기. HOME 미변경, gitignore. |
+| `dist/` | 산출물 | `tsc` 빌드 출력. gitignore. |
 
 ### `core/` 와 `docs/` 의 차이 (헷갈리기 쉬움)
 
