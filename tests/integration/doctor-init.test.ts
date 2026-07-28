@@ -2,9 +2,9 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { rmSync } from 'node:fs';
 import path from 'node:path';
-import { runInstall } from '../../src/commands/install.js';
-import { runDoctor } from '../../src/commands/doctor.js';
-import { runInit, detectProject } from '../../src/commands/init.js';
+import { runInstall } from '../../commands/install.js';
+import { runDoctor } from '../../commands/doctor.js';
+import { runInit, detectProject } from '../../commands/init.js';
 import { makeTempHome, silentLogger } from '../helpers/temp-home.js';
 
 test('doctor: a clean install reports no errors', () => {

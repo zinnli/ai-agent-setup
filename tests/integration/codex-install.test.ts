@@ -5,10 +5,10 @@ import { spawnSync } from 'node:child_process';
 import path from 'node:path';
 import os from 'node:os';
 import TOML from '@iarna/toml';
-import { runInstall } from '../../src/commands/install.js';
-import { runUninstall } from '../../src/commands/uninstall.js';
-import { renderHooks } from '../../src/adapters/codex/hooks.js';
-import { loadCore } from '../../src/core/load.js';
+import { runInstall } from '../../commands/install.js';
+import { runUninstall } from '../../commands/uninstall.js';
+import { renderHooks } from '../../adapters/codex/hooks.js';
+import { loadCore } from '../../loader/load.js';
 import { makeTempHome, silentLogger } from '../helpers/temp-home.js';
 import { projectRoot } from '../helpers/paths.js';
 

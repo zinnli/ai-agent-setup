@@ -10,7 +10,7 @@
 ## 동작 방식 한눈에 보기
 
 ```
-core/ (중립 소스)  ──▶  src/adapters/ (렌더러)  ──▶  ~/.claude/**  (Claude Code)
+core/ (중립 소스)  ──▶  adapters/ (렌더러)  ──▶  ~/.claude/**  (Claude Code)
                                              └──▶  ~/.codex/**, ~/.agents/skills/**  (Codex)
 ```
 
@@ -23,19 +23,69 @@ npm install
 npm run build
 
 # 1) 실제 설치 전에 무엇이 바뀔지 미리 본다 (아무것도 쓰지 않음)
-node dist/src/cli.js diff --target=all
+node dist/cli.js diff --target=all
 
 # 2) 실제 홈(~/.claude, ~/.codex, ~/.agents)에 설치
-node dist/src/cli.js install --target=all
+node dist/cli.js install --target=all
 
 # 3) 상태 확인
-node dist/src/cli.js status
+node dist/cli.js status
 ```
 
 > 설치가 부담되면 임시 홈에 먼저 예행한다: `install --target=all --home="$(mktemp -d)"`.
 > 이후 실제 도구에서의 사용법은 아래 [사용법](#사용법-claude--codex) 참고.
 
 ## 폴더 구조
+
+저장소 최상위는 크게 **① 설치되는 "내용"(`core/`) · ② 사람용 "설명서"(`docs/`) · ③ 그 내용을 변환·설치·검증하는 "코드"(나머지)** 로 나뉜다. `core/`와 `docs/`는 절대 섞지 않는다.
+
+```
+ai-agent-setup/
+├── core/        설치되는 "내용" (AI가 읽음) — 도구 비종속 중립 소스
+├── docs/        사람이 읽는 "설명서" (설치 안 됨)
+│
+├── loader/      core/를 파싱·검증해 CoreModel로 변환
+├── adapters/    CoreModel을 도구별 형식으로 렌더 (claude·codex·shared)
+├── commands/    CLI 하위 명령 (build/install/update/…)
+├── fs/          설치 인프라 (원자적 쓰기·백업·구조 병합·매니페스트)
+├── util/        공용 유틸 (경로·해시·로깅 등)
+├── cli.ts       CLI 진입점
+│
+├── scripts/     보조 셸 스크립트 (시크릿 검사·pack 스모크)
+├── tests/       단위·통합·스냅샷 테스트 (실제 HOME 미변경)
+├── generated/   build 미리보기 산출물 (gitignore)
+└── dist/        tsc 빌드 출력 (gitignore)
+```
+
+### 폴더별 역할
+
+| 경로 | 분류 | 역할 |
+| --- | --- | --- |
+| `core/` | 내용(설치됨) | 도구 비종속 중립 소스. 지침·에이전트·스킬·MCP·훅의 원본. 유일하게 실제로 "설치되는" 내용. |
+| `docs/` | 설명서 | 이 저장소를 사람이 읽는 문서. 주제별로 나뉨. 어디에도 설치되지 않음. |
+| `loader/` | 코드 | `core/`를 파싱·검증해 정규화된 `CoreModel`로 만드는 로더. |
+| `adapters/` | 코드 | `CoreModel`을 각 도구 형식의 파일로 렌더. 도구별 `claude`/`codex`, 공통 로직은 `shared/`. |
+| `commands/` | 코드 | CLI 하위 명령 구현 (build·install·update·status·list·diff·uninstall·doctor·init). |
+| `fs/` | 코드 | 설치 인프라: 원자적 쓰기, 백업, 구조 병합(JSON/TOML), 매니페스트, 경로 해석. |
+| `util/` | 코드 | 경로·해시·로깅·JSON 등 공용 유틸. |
+| `cli.ts` | 코드 | 인자를 파싱해 `commands/`로 위임하는 진입점. |
+| `scripts/` | 보조 | 저장소용 셸 스크립트 (시크릿 형식 검사, tarball pack 스모크). |
+| `tests/` | 테스트 | 단위·통합·스냅샷 테스트. 항상 임시 HOME 사용(실제 HOME 미변경). |
+| `generated/` | 산출물 | `build`가 만드는 도구별 미리보기. HOME 미변경, gitignore. |
+| `dist/` | 산출물 | `tsc` 빌드 출력. gitignore. |
+
+### `core/` 와 `docs/` 의 차이 (헷갈리기 쉬움)
+
+| | `core/` | `docs/` |
+| --- | --- | --- |
+| **정체** | 실제로 **설치되는 내용**(지침·에이전트·스킬·MCP·훅) | 이 저장소를 **사람이 읽는 설명서** |
+| **어디로 가나** | 렌더링돼 `~/.claude`·`~/.codex`·`~/.agents`로 설치됨 | 어디에도 설치되지 않음. GitHub·에디터에서 읽음 |
+| **대상 독자** | AI(Claude·Codex) | 사람(기여자·미래의 나) |
+| **나눈 기준** | 카테고리별(instructions/agents/…) | 주제별(architecture/adapters/…) |
+
+`docs/` 안의 문서를 도구별(예: `docs/adapters/claude.md`·`codex.md`)로 나누는 건 **읽기 편하려는 주제 분리**일 뿐, 도구별로 내용을 두 벌 관리하는 게 아니다. 실제 설치 내용의 원본은 언제나 `core/` 하나이고, 도구 차이는 `adapters/` 코드가 처리한다. 그래서 `docs/`의 문서를 `core/`에 넣어서는 안 된다(설명서가 AI 설정으로 잘못 설치됨).
+
+### `core/` 세부
 
 ```
 core/
@@ -116,7 +166,7 @@ AI의 특정 행동 전후에 실행되는 자동 검사·안전장치 스크립
 - Claude Code와 Codex의 훅 지원 방식이 다르므로, `core/hooks/`에는 공통 스크립트만 두고 연결은 `adapters/`가 처리한다.
 
 ## 변환(adapters)
-`core/`는 도구 비종속 중립 소스다. `src/adapters/`의 렌더러가 각 도구 형식으로 변환한다.
+`core/`는 도구 비종속 중립 소스다. `adapters/`의 렌더러가 각 도구 형식으로 변환한다.
 
 | 원본 | Claude Code | Codex |
 | --- | --- | --- |
@@ -134,8 +184,8 @@ TypeScript로 작성되어 있으며 `tsc`로 빌드한다.
 
 ```bash
 npm install
-npm run build          # src/ → dist/
-node dist/src/cli.js <command> [options]
+npm run build          # 소스(cli.ts·adapters·commands·loader·fs·util) → dist/
+node dist/cli.js <command> [options]
 ```
 
 ### 명령어
@@ -170,12 +220,12 @@ node dist/src/cli.js <command> [options]
 ### 예시
 
 ```bash
-node dist/src/cli.js build --target=all
-node dist/src/cli.js install                       # 실제 ~/.claude, ~/.codex, ~/.agents 에 설치
-node dist/src/cli.js diff --target=claude
-node dist/src/cli.js uninstall
-node dist/src/cli.js doctor
-node dist/src/cli.js init                           # 현재 프로젝트에 CLAUDE.md/AGENTS.md 생성
+node dist/cli.js build --target=all
+node dist/cli.js install                       # 실제 ~/.claude, ~/.codex, ~/.agents 에 설치
+node dist/cli.js diff --target=claude
+node dist/cli.js uninstall
+node dist/cli.js doctor
+node dist/cli.js init                           # 현재 프로젝트에 CLAUDE.md/AGENTS.md 생성
 ```
 
 ## 사용법 (Claude / Codex)
@@ -185,7 +235,7 @@ node dist/src/cli.js init                           # 현재 프로젝트에 CLA
 ### Claude Code에서 사용하기
 
 ```bash
-node dist/src/cli.js install --target=claude
+node dist/cli.js install --target=claude
 ```
 
 설치되는 위치와 사용 방식:
@@ -205,12 +255,12 @@ node dist/src/cli.js install --target=claude
    export NOTION_TOKEN=secret_xxx   # 실제 값은 저장소가 아니라 환경에만
    ```
 2. **Claude Code 실행** — `claude`를 켜면 `CLAUDE.md`·서브에이전트·스킬·MCP·훅이 자동 적용된다.
-3. **확인** — `node dist/src/cli.js doctor --target=claude`로 설치 정합성과 MCP 환경변수 설정 여부를 점검한다.
+3. **확인** — `node dist/cli.js doctor --target=claude`로 설치 정합성과 MCP 환경변수 설정 여부를 점검한다.
 
 ### Codex에서 사용하기
 
 ```bash
-node dist/src/cli.js install --target=codex
+node dist/cli.js install --target=codex
 ```
 
 설치되는 위치와 사용 방식(경로·스키마는 `codex-cli`와 공식 매뉴얼로 검증됨):
@@ -232,7 +282,7 @@ node dist/src/cli.js install --target=codex
    ```
 2. **훅 신뢰** — Codex는 처음 보는 훅을 신뢰 전까지 실행하지 않는다. 세션에서 `/hooks`로 신뢰하거나, 자동화라면 `codex --dangerously-bypass-hook-trust`로 실행한다.
 3. **Codex 실행** — `codex`를 켜면 `AGENTS.md`·에이전트·스킬·MCP·훅이 적용된다.
-4. **확인** — `node dist/src/cli.js doctor --target=codex`로 정합성과 남은 호환성 경고를 확인한다.
+4. **확인** — `node dist/cli.js doctor --target=codex`로 정합성과 남은 호환성 경고를 확인한다.
 
 > **한 번에 둘 다**: `install --target=all`로 두 도구에 동시에 설치할 수 있다. 실제 도구가 설정을 읽는지 최종 확인하는 절차는 [`docs/manual-checklist.md`](docs/manual-checklist.md)에 있다.
 
@@ -284,4 +334,4 @@ UPDATE_SNAPSHOTS=1 npm test   # 스냅샷 갱신
 
 자동 테스트는 실제 HOME을 절대 수정하지 않는다(항상 임시 HOME). 실제 Claude/Codex 로딩 확인은 수동 체크리스트로 남긴다 — `docs/manual-checklist.md` 참고.
 
-문서: [`docs/architecture.md`](docs/architecture.md), [`docs/core-schema.md`](docs/core-schema.md) (Core 추가 방법), [`docs/adapters.md`](docs/adapters.md), [`docs/installation.md`](docs/installation.md), [`docs/troubleshooting.md`](docs/troubleshooting.md), [`docs/manual-checklist.md`](docs/manual-checklist.md).
+문서: [`docs/architecture.md`](docs/architecture.md), [`docs/core-schema.md`](docs/core-schema.md) (Core 추가 방법), [`docs/adapters/`](docs/adapters/README.md) ([Claude](docs/adapters/claude.md)·[Codex](docs/adapters/codex.md)), [`docs/installation.md`](docs/installation.md), [`docs/troubleshooting.md`](docs/troubleshooting.md), [`docs/manual-checklist.md`](docs/manual-checklist.md).

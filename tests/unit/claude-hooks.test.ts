@@ -1,10 +1,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mapClaudeEvent } from '../../src/adapters/claude/event-map.js';
-import { renderHooks } from '../../src/adapters/claude/hooks.js';
-import { renderMcp } from '../../src/adapters/claude/mcp.js';
-import type { CoreModel, Hook } from '../../src/core/model.js';
-import { loadCore } from '../../src/core/load.js';
+import { mapClaudeEvent } from '../../adapters/claude/event-map.js';
+import { renderHooks } from '../../adapters/claude/hooks.js';
+import { renderMcp } from '../../adapters/claude/mcp.js';
+import type { CoreModel, Hook } from '../../loader/model.js';
+import { loadCore } from '../../loader/load.js';
 import { minimalCore } from '../helpers/paths.js';
 
 function base(): CoreModel {

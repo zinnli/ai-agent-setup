@@ -15,6 +15,14 @@
     "declaration": false,
     "sourceMap": true
   },
-  "include": ["src/**/*.ts", "tests/**/*.ts"],
+  "include": [
+    "cli.ts",
+    "adapters/**/*.ts",
+    "commands/**/*.ts",
+    "loader/**/*.ts",
+    "fs/**/*.ts",
+    "util/**/*.ts",
+    "tests/**/*.ts"
+  ],
   "exclude": ["node_modules", "dist", "generated"]
 }

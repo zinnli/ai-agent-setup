@@ -2,11 +2,11 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readdirSync, chmodSync } from 'node:fs';
 import path from 'node:path';
-import { runInstall, installAdapter } from '../../src/commands/install.js';
-import { runUninstall } from '../../src/commands/uninstall.js';
-import { runDiff } from '../../src/commands/diff.js';
-import { claudeAdapter } from '../../src/adapters/claude/index.js';
-import { renderAll } from '../../src/adapters/render-all.js';
+import { runInstall, installAdapter } from '../../commands/install.js';
+import { runUninstall } from '../../commands/uninstall.js';
+import { runDiff } from '../../commands/diff.js';
+import { claudeAdapter } from '../../adapters/claude/index.js';
+import { renderAll } from '../../adapters/render-all.js';
 import { makeTempHome, silentLogger } from '../helpers/temp-home.js';
 
 const opts = (home: string, extra: Record<string, unknown> = {}) => ({
